@@ -19,7 +19,7 @@ from datetime import date, datetime, timezone
 from coms_schema_generator import serial_to_computer_data, SignalType, DeviceType
 from planter_data_schema import PlanterToPC
 
-data_format: list[tuple[str, str]] = [
+data_format: list[tuple[str, str, SignalType]] = [
     ("time", "float", SignalType.SENSOR),
     ("vlv0", "bool", SignalType.CONTROL),
     ("vlv1", "bool", SignalType.CONTROL),
@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
 
         datetime_now = datetime.now(timezone.utc)
         self.worker = TelemetryWorker(
-            PlanterToPC(), f"./{datetime_now:%Y%m%d-%H%M%S}.csv"
+            PlanterToPC(), f"./data/{datetime_now:%Y%m%d-%H%M%S}.csv"
         )
 
         self.timer = QTimer()
@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
         self.saving_data_to_file = state
         if self.saving_data_to_file:
             datetime_now = datetime.now()
-            self.worker.path = f"./{datetime_now:%Y%m%d-%H%M%S}.csv"
+            self.worker.path = f"./data/{datetime_now:%Y%m%d-%H%M%S}.csv"
             with open(self.worker.path, "a") as f:
                 f.write(self.worker.converter.make_header())
 
@@ -145,27 +145,28 @@ class TelemetryWorker(QRunnable):
         self.data = bytes()
 
     @pyqtSlot()
-    def run(self, logging: bool, standard_item: QStandardItemModel):
+    def run(self, logging: bool, standard_item: QStandardItemModel):  # ty:ignore[invalid-method-override]
         new_data = self.serial_port.read_all()
         self.data += new_data
-        with open(self.path, "a") as f:
-            while len(self.data) >= self.converter.data_length:
-                self.converter.unpack_values(self.data[0 : self.converter.data_length])
-                # print("Received:", self.converter.time, self.converter.sns0)
-                self.data = self.data[self.converter.data_length :]
 
-                # print(self.converter.make_csv_line())
-                for i, (name, type, signal_type) in enumerate(data_format):
-                    value = getattr(self.converter, name)
-                    value_item = QStandardItem(str(value))
-                    standard_item.setItem(i, 1, value_item)
+        while len(self.data) >= self.converter.data_length:
+            self.converter.unpack_values(self.data[0 : self.converter.data_length])
+            # print("Received:", self.converter.time, self.converter.sns0)
+            self.data = self.data[self.converter.data_length :]
 
-                if logging:
+            # print(self.converter.make_csv_line())
+            for i, (name, type, signal_type) in enumerate(data_format):
+                value = getattr(self.converter, name)
+                value_item = QStandardItem(str(value))
+                standard_item.setItem(i, 1, value_item)
+
+            if logging:
+                with open(self.path, "a") as f:
                     f.write(self.converter.make_csv_line())
 
 
 data_formatter = serial_to_computer_data(data_format, "PlanterToPC", DeviceType.ARDUINO)
-data_formatter.make_c_file("../Plant Controller/include/data_schema.h")
+data_formatter.make_c_file("../Plant Arduino/include/data_schema.h")
 data_formatter.make_python_file("./planter_data_schema.py")
 
 # You need one (and only one) QApplication instance per application.

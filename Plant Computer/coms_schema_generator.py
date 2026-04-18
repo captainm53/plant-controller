@@ -34,7 +34,7 @@ class serial_to_computer_data:
 
     def __init__(
         self,
-        data_format: list[tuple[str, str]],
+        data_format: list[tuple[str, str, SignalType]],
         telemetry_name: str,
         device_type: DeviceType,
     ):
