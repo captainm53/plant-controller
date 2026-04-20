@@ -1,4 +1,4 @@
-#define BUFFER_SIZE 44
+#define BUFFER_SIZE 48
 class PlanterToPC
 {
 public:
@@ -19,6 +19,7 @@ public:
 	float sns5;
 	float sns6;
 	float sns7;
+	float real_time;
 	int size = BUFFER_SIZE;
 	char buffer[BUFFER_SIZE];
 
@@ -41,6 +42,7 @@ public:
 		memcpy(&buffer[32], &sns5, 4);
 		memcpy(&buffer[36], &sns6, 4);
 		memcpy(&buffer[40], &sns7, 4);
+		memcpy(&buffer[44], &real_time, 4);
 		return buffer;
 	};
 };

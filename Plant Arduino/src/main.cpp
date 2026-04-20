@@ -12,6 +12,9 @@
 
 PlanterToPC dataschema;
 
+uint8_t real_time = 0; // Realworld time. Divide by 10 to get time in hours
+unsigned long real_time_recieved = 0;
+
 void setup()
 {
   Serial.begin(115200);
@@ -83,6 +86,14 @@ void loop()
     {
       dataschema.light1 = channel_value;
     }
+    if (channel_name == 255)
+    {
+      if (real_time != channel_value)
+      {
+        real_time = channel_value; // Real time in hours, only precise to 10ths
+        real_time_recieved = millis();
+      }
+    }
   }
   dataschema.sns0 = analogRead(A0) / 1023 * 5;
   dataschema.sns1 = analogRead(A1) / 1023 * 5;
@@ -93,6 +104,7 @@ void loop()
   dataschema.sns6 = analogRead(A6) / 1023 * 5;
   dataschema.sns7 = analogRead(A7) / 1023 * 5;
   dataschema.time = millis() / 1000.0;
+  dataschema.real_time = real_time / 10.0 + (millis() - real_time_recieved) / 1000.0 / 60.0 / 60.0;
 
   digitalWrite(vlv0_pin, dataschema.vlv0);
   digitalWrite(vlv1_pin, dataschema.vlv1);
@@ -102,6 +114,12 @@ void loop()
   digitalWrite(vlv5_pin, dataschema.vlv5);
   digitalWrite(light0_pin, dataschema.light0);
   digitalWrite(light1_pin, dataschema.light1);
+
+  if (dataschema.real_time > 8 && dataschema.real_time < 20)
+  {
+    dataschema.light0 = 1;
+    dataschema.light1 = 1;
+  }
 
   Serial.write(dataschema.make_data_buffer(), dataschema.size);
   Serial.flush();

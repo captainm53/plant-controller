@@ -37,6 +37,7 @@ data_format: list[tuple[str, str, SignalType]] = [
     ("sns5", "float", SignalType.SENSOR),
     ("sns6", "float", SignalType.SENSOR),
     ("sns7", "float", SignalType.SENSOR),
+    ("real_time", "float", SignalType.CONTROL),
 ]
 
 
@@ -59,6 +60,11 @@ class MainWindow(QMainWindow):
         self.timer.setInterval(100)
         self.timer.timeout.connect(self.kickOffWorker)
         self.timer.start()
+
+        self.timer2 = QTimer()
+        self.timer2.setInterval(1000 * 60 * 60)
+        self.timer2.timeout.connect(self.send_time)
+        self.timer2.start()
 
         cental_widget = QWidget()
 
@@ -109,6 +115,8 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(cental_widget)
 
+        self.send_time()
+
     def send_command(self, item: QStandardItem):
         if item.isCheckable():
             print(item.checkState(), item.data())
@@ -117,6 +125,13 @@ class MainWindow(QMainWindow):
             channel_bytes += checked.to_bytes()
             print(channel_bytes)
             self.worker.serial_port.write(channel_bytes)
+
+    def send_time(self):
+        current_time = datetime.now().hour + datetime.now().minute / 60
+        current_time_sendable = int(current_time * 10).to_bytes(1)
+        channel_bytes = int(255).to_bytes(1)
+        channel_bytes += current_time_sendable
+        self.worker.serial_port.write(channel_bytes)
 
     def set_logging_state(self, state):
         self.saving_data_to_file = state
@@ -128,7 +143,7 @@ class MainWindow(QMainWindow):
 
     def kickOffWorker(self):
         # self.threadpool.start(self.worker)
-        self.worker.run(self.saving_data_to_file, self.standard_item)
+        self.worker.run_worker(self.saving_data_to_file, self.standard_item)
 
 
 class TelemetryWorker(QRunnable):
@@ -145,7 +160,7 @@ class TelemetryWorker(QRunnable):
         self.data = bytes()
 
     @pyqtSlot()
-    def run(self, logging: bool, standard_item: QStandardItemModel):  # ty:ignore[invalid-method-override]
+    def run_worker(self, logging: bool, standard_item: QStandardItemModel):
         new_data = self.serial_port.read_all()
         self.data += new_data
 

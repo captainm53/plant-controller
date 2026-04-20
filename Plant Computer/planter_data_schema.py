@@ -1,7 +1,7 @@
 import struct
 class PlanterToPC:
-	data_length = 44
-	struct_format = "<f????????ffffffff"
+	data_length = 48
+	struct_format = "<f????????fffffffff"
 	time: float
 	vlv0: bool
 	vlv1: bool
@@ -19,6 +19,7 @@ class PlanterToPC:
 	sns5: float
 	sns6: float
 	sns7: float
+	real_time: float
 	def unpack_values(self, data: bytes):
 		assert len(data) == self.data_length
 		unpacked_values = struct.unpack(self.struct_format, data)
@@ -39,7 +40,8 @@ class PlanterToPC:
 		self.sns5 = float(unpacked_values[14])
 		self.sns6 = float(unpacked_values[15])
 		self.sns7 = float(unpacked_values[16])
+		self.real_time = float(unpacked_values[17])
 	def make_header(self) -> str:
-		return "time, vlv0, vlv1, vlv2, vlv3, vlv4, vlv5, light0, light1, sns0, sns1, sns2, sns3, sns4, sns5, sns6, sns7, \n"
+		return "time, vlv0, vlv1, vlv2, vlv3, vlv4, vlv5, light0, light1, sns0, sns1, sns2, sns3, sns4, sns5, sns6, sns7, real_time, \n"
 	def make_csv_line(self) -> str:
-		return f"{self.time},{self.vlv0},{self.vlv1},{self.vlv2},{self.vlv3},{self.vlv4},{self.vlv5},{self.light0},{self.light1},{self.sns0},{self.sns1},{self.sns2},{self.sns3},{self.sns4},{self.sns5},{self.sns6},{self.sns7},\n"
+		return f"{self.time},{self.vlv0},{self.vlv1},{self.vlv2},{self.vlv3},{self.vlv4},{self.vlv5},{self.light0},{self.light1},{self.sns0},{self.sns1},{self.sns2},{self.sns3},{self.sns4},{self.sns5},{self.sns6},{self.sns7},{self.real_time},\n"
