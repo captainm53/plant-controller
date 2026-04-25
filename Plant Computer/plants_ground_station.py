@@ -6,8 +6,9 @@ from PyQt6.QtWidgets import (
     QTableView,
     QGridLayout,
     QWidget,
+    CheckState,
 )
-from PyQt6.QtCore import QRunnable, QThreadPool, QTimer, pyqtSlot, Qt
+from PyQt6.QtCore import QRunnable, QThreadPool, QTimer, pyqtSlot, Qt, CheckState
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QTextTableCell
 
 import sys
@@ -62,7 +63,7 @@ class MainWindow(QMainWindow):
         self.timer.start()
 
         self.timer2 = QTimer()
-        self.timer2.setInterval(1000 * 60 * 60)
+        self.timer2.setInterval(1000)
         self.timer2.timeout.connect(self.send_time)
         self.timer2.start()
 
@@ -120,7 +121,7 @@ class MainWindow(QMainWindow):
     def send_command(self, item: QStandardItem):
         if item.isCheckable():
             print(item.checkState(), item.data())
-            channel_bytes = int(item.data()).to_bytes()
+            channel_bytes: bytes = int(item.data()).to_bytes()
             checked = item.checkState() == Qt.CheckState.Checked
             channel_bytes += checked.to_bytes()
             print(channel_bytes)
@@ -174,6 +175,14 @@ class TelemetryWorker(QRunnable):
                 value = getattr(self.converter, name)
                 value_item = QStandardItem(str(value))
                 standard_item.setItem(i, 1, value_item)
+
+                potential_button = standard_item.item(i, 2)
+                if potential_button and potential_button.isCheckable():
+                    if bool(value):
+                        set_check = Qt.CheckState.Checked
+                    else:
+                        set_check = Qt.CheckState.Unchecked
+                    potential_button.setCheckState(set_check)
 
             if logging:
                 with open(self.path, "a") as f:

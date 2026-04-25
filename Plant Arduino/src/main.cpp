@@ -105,6 +105,10 @@ void loop()
   dataschema.sns7 = analogRead(A7) / 1023 * 5;
   dataschema.time = millis() / 1000.0;
   dataschema.real_time = real_time / 10.0 + (millis() - real_time_recieved) / 1000.0 / 60.0 / 60.0;
+  while (dataschema.real_time > 24)
+  {
+    dataschema.real_time = dataschema.real_time - 24;
+  }
 
   digitalWrite(vlv0_pin, dataschema.vlv0);
   digitalWrite(vlv1_pin, dataschema.vlv1);
@@ -115,10 +119,15 @@ void loop()
   digitalWrite(light0_pin, dataschema.light0);
   digitalWrite(light1_pin, dataschema.light1);
 
-  if (dataschema.real_time > 8 && dataschema.real_time < 20)
+  if (dataschema.real_time > 8 && dataschema.real_time < 9)
   {
     dataschema.light0 = 1;
     dataschema.light1 = 1;
+  }
+  else if (dataschema.real_time > 20 && dataschema.real_time < 21)
+  {
+    dataschema.light0 = 0;
+    dataschema.light1 = 0;
   }
 
   Serial.write(dataschema.make_data_buffer(), dataschema.size);
